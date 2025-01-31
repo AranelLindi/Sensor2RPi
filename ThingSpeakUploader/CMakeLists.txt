@@ -17,7 +17,15 @@ target_link_libraries(thingspeak_uploader PRIVATE ${SQLITE3_LIBRARIES} ${CURL_LI
 target_include_directories(thingspeak_uploader PRIVATE ${SQLITE3_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS})
 
 # Installiert das Binary im übergeordneten Verzeichnis (z. B. `Sensor2RPi/bin/`)
-install(TARGETS thingspeak_uploader DESTINATION ../bin)
+install(TARGETS thingspeak_uploader DESTINATION bin)
 
 # Installiert die Konfigurationsdatei (config.ini) im gleichen Verzeichnis wie das Binary
-install(FILES src/config.ini DESTINATION ../bin)
+install(FILES config.ini DESTINATION bin)
+
+# Automatischer Kopiervorgang nach Build
+add_custom_command(
+	TARGET thingspeak_uploader POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy
+	${CMAKE_SOURCE_DIR}/ThingSpeakUploader/src/config.ini
+	${CMAKE_BINARY_DIR}/ThingSpeakUploader/config.ini
+)

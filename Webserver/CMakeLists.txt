@@ -7,7 +7,7 @@ project(WebServer C)
 set(CMAKE_C_STANDARD 11)
 
 # Erstelle die ausführbare Datei
-add_executable(webserver webserver.c)
+add_executable(webserver src/webserver.c)
 
 # Benötigte Bibliotheken hinzufügen (pthread und SQLite3)
 target_link_libraries(webserver pthread sqlite3)
@@ -17,6 +17,9 @@ install(TARGETS webserver DESTINATION bin)
 install(FILES index.html DESTINATION bin)
 
 # Automatischer Kopiervorgang nach Build (optional)
-add_custom_command(TARGET webserver POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/index.html ${CMAKE_BINARY_DIR}/index.html
+add_custom_command(
+    TARGET webserver POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+    ${CMAKE_SOURCE_DIR}/Webserver/src/index.html
+    ${CMAKE_BINARY_DIR}/Webserver/index.html
 )
