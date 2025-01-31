@@ -1,5 +1,5 @@
 # Basis Image mit Build Tools
-FROM ubuntu:minimal
+FROM ubuntu:latest
 
 # Nötige Pakete installieren
 RUN apt-get update && apt-get install -y \
@@ -11,15 +11,16 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Kopiert alle kompilierten Dateien in das Verzeichnis /app im Container
-COPY webserver /app/webserver
-COPY mqtt_client /app/mqtt_client
-COPY thingspeak_uploader /app/thingspeak_uploader
-COPY index.html /app/index.html
-COPY config.ini /app/config.ini
-COPY sensor_data.db /app/sensor_data.db
+COPY bin/webserver /app/webserver
+COPY bin/mqtt_client /app/mqtt_client
+COPY bin/thingspeak_uploader /app/thingspeak_uploader
+COPY bin/index.html /app/index.html
+COPY bin/config.ini /app/config.ini
+COPY bin/sensor_data.db /app/sensor_data.db
+COPY start_services.sh /app/start_services.sh
 
 # Stellt sicher, dass die Binärdatei ausführbar ist
-RUN chmod +x /app/webserver /app/mqtt_client /app/thingspeak_uploader
+RUN chmod +x /app/webserver /app/mqtt_client /app/thingspeak_uploader /app/start_services.sh
 
 # Exponiert Ports für Webserver & MQTT
 EXPOSE 8080 1883

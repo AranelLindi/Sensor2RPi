@@ -151,6 +151,8 @@ error_close:
 }
 
 int main() {
+    printf("Main starts...\n");
+
     int server_fd, new_socket;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
