@@ -1,19 +1,29 @@
-Docker-Image aktualisieren (falls Programmcode geändert wurde):
+# Auflisten aller laufenden Docker Container:
+docker ps
 
-docker rmi mein-image-name # Altes Images entfernen (um Platz zu sparen)
+# Entfernen eines Containers:
+# 1. Alten Container stoppen (falls er gerade läuft):
+docker stop [name]
+# 2. Container löschen:
+docker rm [name]
+# 3. Docker Image entfernen (kann dann nicht mehr gestartet werden):
+docker rmi [name]
 
-docker build -t mein-image-name . # Neues Image mit Codeänderungen bauen
+# Falls ein Container nur gestoppt wurde kann er wieder gestartet werden:
+docker start [name]
 
-docker stop mein-container-name # 1. Alten Container stoppen & löschen
-docker rm mein-container-name # 2. Container löschen
-docker rmi mein-container-name # 3. Docker Image entfernen
+# Erstellen eines neuen Images (erfordert Dockerfile):
+docker build -t [name]
 
-docker start mein-container-name # Lässt einen gestoppten Container wieder laufen
+# Starten des Containers:
+docker run -it -d -p 8080:8080 -p 1883:1883 --name [Container name] [name]
+docker run -it -d --restart=always --name [Container name] [name] # Startet Container bei jedem Systemstart
 
-docker run -d --name mein-container-name mein-image-name # Neuen Container mit aktualisiertem Image starten
+# Zeigt Ausgaben der Anwendungen an:
+docker logs [name]
 
-docker run -d --restart=always --name mein-container-name mein-image-name # Startet den Container bei jedem Systemstart
+# Öffnet eine Konsole direkt im Container:
+docker exec -it [name] /bin/sh
 
-docker logs mein-container-name # Zeigt Ausgaben der Anwendungen an
-
-docker exec -it mein-container-name /bin/sh # Öffnet eine Konsole direkt im Container
+# Alle installierten Images auflisten:
+docker image ls
