@@ -1,0 +1,4 @@
+[submodule "sensor_esp32c3"]
+	path = sensor_esp32c3
+	url = git@github.com:AranelLindi/sensor_esp32c3.git
+	branch = master

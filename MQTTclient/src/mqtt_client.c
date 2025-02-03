@@ -6,13 +6,15 @@
 #include <string.h>
 
 #define DB_NAME "sensor_data.db"
+#define MQTT_BROKER "localhost"
+#define MQTT_PORT 1883
 
 // SQLite-Datenbank
 sqlite3 *db;
 
 // Callback-Funktion für empfangene MQTT-Nachrichten
 void on_message(struct mosquitto *mosq, void *userdata, const struct mosquitto_message *message) {
-    printf("Interrupt: Neue Nachricht! Topic=%s, Payload=%s\n", message->topic, (char *)message->payload);
+    printf("Debug:  Neue Nachricht! Topic=%s, Payload=%s\n", message->topic, (char *)message->payload);
 
     // Topic zerlegen: sensors/device_id/sensor_type
     char device_id[50], sensor_type[50];
@@ -51,7 +53,7 @@ int main() {
 
     // Tabelle erstellen, falls nicht vorhanden:
     const char *create_table_sql = 
-        "CREATE TABLE measurements ("
+        "CREATE TABLE IF NOT EXISTS measurements ("
         "id INTEGER PRIMARY KEY,"
         "timestamp TEXT NOT NULL,"
         "device_id TEXT NOT NULL,"
@@ -59,8 +61,10 @@ int main() {
         "value REAL NOT NULL,"
 	"sent INTEGER DEFAULT 0"
         ");";
-    sqlite3_exec(db, create_table_sql, 0, 0, NULL);
-
+    if (sqlite3_exec(db, create_table_sql, 0, 0, NULL) != SQLITE_OK) {
+	printf("Fehler beim Erstellen der Tabelle: %s\n", sqlite3_errmsg(db));
+	return 1;
+    }
 
     // Mosquitto Bibliothek initialisieren
     mosquitto_lib_init(); 
@@ -86,10 +90,8 @@ int main() {
 
     printf("Warte auf MQTT-Interrupts...\n");
 
-    // Endlosschleife zum Verarbeiten von Nachrichten (ohne Blockierung)
-    while (1) {
-        mosquitto_loop(mosq, -1, 1);
-    }
+    // Endlosschleife für die MQTT-Verarbeitung (stellt auch Reconnect sicher)
+    mosquitto_destroy(mosq);
 
     // Speicher freigeben (wird nie erreicht)
     mosquitto_destroy(mosq);
