@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  sensors2rpi:
+    image: sensors2rpi  # Name des Docker-Images
+    container_name: sensors2rpi  # Setzt einen festen Namen für den Container
+    ports:
+      - "8080:8080"  # Webserver-Port weiterleiten
+      - "1883:1883"  # MQTT-Port weiterleiten
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"  # Maximal 10 MB pro Log-Datei
+        max-file: "3"    # Maximal 3 Log-Dateien speichern, ältere werden gelöscht
+    # restart: always  # Diese Zeile kann auskommentiert bleiben, bis du sie aktivieren willst
+
+
+# Container starten mit "$ docker-compose up -d" (docker run entfällt; builden wie gehabt mit docker build -t sensors2rpi .)

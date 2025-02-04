@@ -16,8 +16,11 @@ ThingSpeakUploader/CMakeFiles/
 ThingSpeakUploader/Makefile
 ThingSpeakUploader/cmake_install.cmake
 ThingSpeakUploader/thingspeak_uploader
+ThingSpeakUploader/config.ini
 
 Webserver/CMakeFiles/
 Webserver/Makefile
 Webserver/cmake_install.cmake
 Webserver/webserver
+
+build/

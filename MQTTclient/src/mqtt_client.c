@@ -14,8 +14,6 @@ sqlite3 *db;
 
 // Callback-Funktion für empfangene MQTT-Nachrichten
 void on_message(struct mosquitto *mosq, void *userdata, const struct mosquitto_message *message) {
-    printf("Debug:  Neue Nachricht! Topic=%s, Payload=%s\n", message->topic, (char *)message->payload);
-
     // Topic zerlegen: sensors/device_id/sensor_type
     char device_id[50], sensor_type[50];
     if (sscanf(message->topic, "sensors/%49[^/]/%49s", device_id, sensor_type) != 2) {
@@ -32,19 +30,23 @@ void on_message(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
             "VALUES (CAST(strftime('%%s', 'now') AS INTEGER), '%s', '%s', %f);",
             device_id, sensor_type, value);
             // ACHTUNG! Reihenfolge der Spalten muss übereinstimmen mit der DB!
-    printf("SQLite3: %s\n", sql);
+    //printf("DEBUG: SQLite3: %s\n", sql);
 
     char *err_msg = NULL;
     if (sqlite3_exec(db, sql, 0, 0, &err_msg) != SQLITE_OK) {
         printf("SQLite-Fehler: %s\n", err_msg);
         sqlite3_free(err_msg);
     } else {
-        printf("Daten gespeichert: %s -> %s (%s = %f)\n",
-        message->topic, (char *)message->payload, sensor_type, value);
+        //printf("Daten gespeichert: %s -> %s (%s = %f)\n",
+        //message->topic, (char *)message->payload, sensor_type, value);
+        printf("%lld mqtt_client: topic=%s, payload=%s\n", (long long)time(NULL), message->topic, (char *)message->payload);
     }
 }
 
 int main() {
+	// DEBUG:
+	//printf("DEBUG\n");
+
     // SQLite Datenbank öffnen/erstellen
     if (sqlite3_open(DB_NAME, &db) != SQLITE_OK) {
         printf("Fehler beim Öffnen der SQLite-Datenbank!\n");
@@ -59,7 +61,7 @@ int main() {
         "device_id TEXT NOT NULL,"
         "sensor_type TEXT NOT NULL,"
         "value REAL NOT NULL,"
-	"sent INTEGER DEFAULT 0"
+	    "sent INTEGER DEFAULT 0"
         ");";
     if (sqlite3_exec(db, create_table_sql, 0, 0, NULL) != SQLITE_OK) {
 	printf("Fehler beim Erstellen der Tabelle: %s\n", sqlite3_errmsg(db));
@@ -85,13 +87,34 @@ int main() {
         return 1;
     }
 
-    // Abonniere alle Sensor-Topics
+    // Abonniere alle Sensor-Topics (alles was unter sensors/... folgt)
     mosquitto_subscribe(mosq, NULL, "sensors/#", 1); // QoS == 1 (jedes Paket wird mindestens 1 Mal empfangen)
 
     printf("Warte auf MQTT-Interrupts...\n");
 
     // Endlosschleife für die MQTT-Verarbeitung (stellt auch Reconnect sicher)
-    mosquitto_destroy(mosq);
+    /*int loop_res = //mosquitto_loop_forever(mosq, -1, 1);
+    if (loop_res != MOSQ_ERR_SUCCESS) {
+	    printf("Fehler in mosquitto_loop_forever: %s\n", mosquitto_strerror(loop_res));
+    }*/
+    while (1) {
+        int loop_res = mosquitto_loop(mosq, 30000, 1);  // Alle 30 Sekunden prüfen ob Mosquitto neue Pakete hat
+        if (loop_res != MOSQ_ERR_SUCCESS) {
+            printf("Fehler in mosquitto_loop: %s\n", mosquitto_strerror(loop_res));
+            break;
+        }
+/*
+        // Überprüfen, ob neue Daten in der letzten Minute empfangen wurden
+        time_t now = time(NULL);
+        static time_t last_db_update = 0;
+
+        if (now - last_db_update >= 600) {  // Alle 10 Minuten (600 Sekunden)
+            printf("MQTT-Client: Stelle sicher, dass die neuesten Werte gespeichert sind.\n");
+            last_db_update = now;
+        }
+*/
+    }
+
 
     // Speicher freigeben (wird nie erreicht)
     mosquitto_destroy(mosq);
@@ -108,11 +131,21 @@ int main() {
 // Broker stoppen:
 //sudo systemctl stop mosquitto
 
+// Prüfen ob Mosquitto läuft
+//sudo systemctl status mosquitto
+
+// Mosquitto starten
+//sudo systemctl start mosquitto
+
+
 // Programm kompilieren:
 //gcc -o mqtt_logger main.c -lmosquitto -lsqlite3
 
 // Testnachricht mit mosquitto_pub senden:
 //mosquitto_pub -t "sensors/sensor123/temperature" -m "23.5"
+
+// Topics abonnieren (hier: alle von rsp5-sl; # == alles)
+//mosquitto_sub -h rsp5-sl -t "#" -v
 
 // Datenbank öffnen:
 //sqlite3 sensor_data.db
