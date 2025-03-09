@@ -4,6 +4,8 @@ services:
   sensors2rpi:
     image: sensors2rpi  # Name des Docker-Images
     container_name: sensors2rpi  # Setzt einen festen Namen für den Container
+    networks:
+      - sensor_network # Gemeinsames Netzwerk für Webserver und Telegram Bot
     ports:
       - "8080:8080"  # Webserver-Port weiterleiten
       - "1883:1883"  # MQTT-Port weiterleiten
@@ -14,5 +16,7 @@ services:
         max-file: "3"    # Maximal 3 Log-Dateien speichern, ältere werden gelöscht
     # restart: always  # Diese Zeile kann auskommentiert bleiben, bis du sie aktivieren willst
 
-
+networks:
+  sensor_network:
+    name: sensor_network # Gemeinsames Netzwerk für Webserver und Telegram Bot
 # Container starten mit "$ docker-compose up -d" (docker run entfällt; builden wie gehabt mit docker build -t sensors2rpi .)
