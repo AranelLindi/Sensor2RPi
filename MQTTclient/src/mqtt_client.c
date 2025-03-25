@@ -14,7 +14,7 @@ sqlite3 *db;
 
 // Callback-Funktion für empfangene MQTT-Nachrichten
 void on_message(struct mosquitto *mosq, void *userdata, const struct mosquitto_message *message) {
-    printf("MQTT Callback\n");
+    //printf("MQTT Callback\n");
 
     // Topic zerlegen: sensors/device_id/sensor_type
     char device_id[50], sensor_type[50];
