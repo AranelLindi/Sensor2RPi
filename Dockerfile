@@ -4,6 +4,7 @@ FROM ubuntu:latest
 # Nötige Pakete installieren
 RUN apt-get update && apt-get install -y \
 	sqlite3 libsqlite3-0 libcurl4 mosquitto \
+	mosquitto mosquitto-clients \
 	&& rm -rf /var/lib/apt/lists/*
 
 

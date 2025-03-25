@@ -6,7 +6,7 @@
 #include <string.h>
 
 #define DB_NAME "sensor_data.db"
-#define MQTT_BROKER "localhost"
+#define MQTT_BROKER "localhost" // Hier muss localhost stehen, da der Broker auf dem gleichen System läuft!!
 #define MQTT_PORT 1883
 
 // SQLite-Datenbank
@@ -14,6 +14,8 @@ sqlite3 *db;
 
 // Callback-Funktion für empfangene MQTT-Nachrichten
 void on_message(struct mosquitto *mosq, void *userdata, const struct mosquitto_message *message) {
+    printf("MQTT Callback\n");
+
     // Topic zerlegen: sensors/device_id/sensor_type
     char device_id[50], sensor_type[50];
     if (sscanf(message->topic, "sensors/%49[^/]/%49s", device_id, sensor_type) != 2) {
@@ -26,8 +28,8 @@ void on_message(struct mosquitto *mosq, void *userdata, const struct mosquitto_m
 
     char sql[256];
     snprintf(sql, sizeof(sql),
-            "INSERT INTO measurements (timestamp, device_id, sensor_type, value) "
-            "VALUES (CAST(strftime('%%s', 'now') AS INTEGER), '%s', '%s', %f);",
+            "INSERT INTO measurements (timestamp, device_id, sensor_type, value, sent) "
+    	    "VALUES (strftime('%%Y-%%m-%%d %%H:%%M:%%f', 'now'), '%s', '%s', %f, 0);",
             device_id, sensor_type, value);
             // ACHTUNG! Reihenfolge der Spalten muss übereinstimmen mit der DB!
     //printf("DEBUG: SQLite3: %s\n", sql);

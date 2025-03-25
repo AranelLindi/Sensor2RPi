@@ -72,27 +72,38 @@
             try {
                 const response = await fetch('/sensors'); // Dein Webserver-Endpunkt
                 const data = await response.json();
-
+    
+                if (!data || data.length === 0) {
+                    console.error("Fehler: Keine Daten verfügbar.");
+                    return;
+                }
+    
                 const container = document.querySelector("#sensorContainer");
                 container.innerHTML = ""; // Vorherige Daten löschen
-
+    
                 data.forEach(sensor => {
                     const card = document.createElement("div");
                     card.className = "sensor-card";
-
+    
                     card.innerHTML = `
-                        <div class="sensor-room">${sensor.room}</div>
-                        <div class="sensor-value">${sensor.value} ${sensor.unit || ''}</div>
-                        <div class="sensor-time">${new Date(sensor.timestamp * 1000).toLocaleString()}</div>
+                        <div class="sensor-room">Gerät: ${sensor.device_id}</div>
+                        <div class="sensor-type">${sensor.sensor_type}</div>
+                        <div class="sensor-value">${sensor.value}</div>
+                        <div class="sensor-time">${new Date(sensor.timestamp).toLocaleString()}</div>
                     `;
-
+    
                     container.appendChild(card);
                 });
+    
             } catch (error) {
                 console.error("Fehler beim Abrufen der Sensordaten:", error);
             }
         }
+    
+        // Automatische Aktualisierung alle 10 Sekunden
+        setInterval(fetchSensorData, 10000);
     </script>
+    
 
 </body>
 </html>

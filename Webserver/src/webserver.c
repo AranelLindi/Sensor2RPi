@@ -10,19 +10,77 @@
 #include "arpa/inet.h"
 #include "sqlite3.h"
 
+#define MAX_MAPPINGS 10
+#define CONFIG_FILE "config.ini"
+
 #define PORT 8080
 #define BUFFER_SIZE 1024
 #define MAX_CONNECTIONS 5
 pthread_mutex_t connection_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+typedef struct {
+    char key[100];   // z. B. sensor1:temperature
+    char room[32];   // z. B. room1
+} RoomMapping;
+
+RoomMapping room_mappings[MAX_MAPPINGS];
+int room_mapping_count = 0;
+
 // Globale Variablen
 int active_connections = 0;
+
+// Liest die config.ini und entnimmt ihr die Raumzuordnung für jeden Sensor
+void load_room_mappings() {
+    FILE *file = fopen(CONFIG_FILE, "r");
+    if (!file) {
+        fprintf(stderr, "WARNUNG: config.ini konnte nicht geladen werden.\n");
+        return;
+    }
+
+    char line[128], key[50], room[32], field[32];
+    while (fgets(line, sizeof(line), file)) {
+        if (line[0] == '#' || line[0] == '\n' || line[0] == '[') continue;
+
+        if (sscanf(line, "%49s = %31[^,], %31s", key, room, field) == 3) {
+            if (room_mapping_count < MAX_MAPPINGS) {
+                strncpy(room_mappings[room_mapping_count].key, key, sizeof(room_mappings[0].key));
+                strncpy(room_mappings[room_mapping_count].room, room, sizeof(room_mappings[0].room));
+                room_mapping_count++;
+            }
+        }
+    }
+
+    fclose(file);
+}
+
+void get_room_for_sensor(const char *device_id, const char *sensor_type, char *room_out, size_t room_size) {
+    char key[100];
+    snprintf(key, sizeof(key), "%s:%s", device_id, sensor_type);
+
+    for (int i = 0; i < room_mapping_count; i++) {
+        if (strcmp(key, room_mappings[i].key) == 0) {
+            strncpy(room_out, room_mappings[i].room, room_size);
+            return;
+        }
+    }
+
+    snprintf(room_out, room_size, "unknown");
+}
+
 
 // Funktion: Sensordaten als JSON aus SQLite abrufen
 void get_sensor_data(char *response, size_t response_size) {
     sqlite3 *db;
     sqlite3_stmt *stmt;
-    const char *query = "SELECT device_id, room, value, timestamp FROM measurements ORDER BY timestamp DESC LIMIT 10;";
+    const char *query =
+        "SELECT device_id, sensor_type, value, strftime('%s', timestamp) AS timestamp "
+        "FROM measurements "
+        "WHERE timestamp = ("
+        "  SELECT MAX(timestamp) "
+        "  FROM measurements AS sub "
+        "  WHERE sub.device_id = measurements.device_id "
+        "  AND sub.sensor_type = measurements.sensor_type"
+        ")";
     
     if (sqlite3_open("sensor_data.db", &db) != SQLITE_OK) {
         snprintf(response, response_size, "{\"error\": \"Datenbank konnte nicht geöffnet werden\"}");
@@ -37,13 +95,19 @@ void get_sensor_data(char *response, size_t response_size) {
             if (!first) strncat(response, ",", response_size - strlen(response) - 1);
             first = 0;
 
+            const char *device_id = (const char *)sqlite3_column_text(stmt, 0);
+            const char *sensor_type = (const char *)sqlite3_column_text(stmt, 1);
+            double value = sqlite3_column_double(stmt, 2);
+            sqlite3_int64 timestamp = sqlite3_column_int64(stmt, 3);
+            
+            char room[32];
+            get_room_for_sensor(device_id, sensor_type, room, sizeof(room));
+            
             char entry[256];
             snprintf(entry, sizeof(entry),
-                     "{\"device_id\": \"%s\", \"room\": \"%s\", \"value\": %.2f, \"timestamp\": %ld}",
-                     sqlite3_column_text(stmt, 0),
-                     sqlite3_column_text(stmt, 1),
-                     sqlite3_column_double(stmt, 2),
-                     sqlite3_column_int64(stmt, 3));
+                "{\"device_id\": \"%s\", \"sensor_type\": \"%s\", \"room\": \"%s\", \"value\": %.2f, \"timestamp\": %lld}",
+                device_id, sensor_type, room, value, timestamp);
+            
 
             strncat(response, entry, response_size - strlen(response) - 1);
         }
@@ -72,7 +136,7 @@ void *handle_client(void* socket) {
         const char *error_response = "HTTP/1.1 405 Method Not Allowed\r\n\r\n";
         write(client_socket, error_response, strlen(error_response));
         close(client_socket);
-        return NULL;
+        goto cleanup;
     }
 
     if (strcmp(path, "/sensors") == 0) {
@@ -90,7 +154,7 @@ void *handle_client(void* socket) {
         write(client_socket, header, strlen(header));
         write(client_socket, json_response, strlen(json_response));
         close(client_socket);
-        return NULL;
+        goto cleanup;
     }
 
     // Pfad anpassen (entferne führendes "/")
@@ -107,7 +171,7 @@ void *handle_client(void* socket) {
         const char *error_response = "HTTP/1.1 404 Not Found\r\n\r\n";
         write(client_socket, error_response, strlen(error_response));
         close(client_socket);
-        return NULL;
+        goto cleanup;
     }
 
     // Dateiinhalt in den Speicher laden
@@ -118,7 +182,7 @@ void *handle_client(void* socket) {
     char *file_content = malloc(file_size + 1);
     if (!file_content) {
         perror("Memory allocation for file failed");
-        goto error_close;
+        goto cleanup; //error_close;
     }
     fread(file_content, 1, file_size, file);
     fclose(file);
@@ -139,7 +203,7 @@ void *handle_client(void* socket) {
     // Ressourcen freigeben
     free(file_content);
 
-error_close:
+cleanup: //error_close:
     close(client_socket);
 
     // Verbindung freigeben
@@ -151,7 +215,9 @@ error_close:
 }
 
 int main() {
-    printf("Main starts...\n");
+    printf("Webserver is starting...\n");
+
+    load_room_mappings();
 
     int server_fd, new_socket;
     struct sockaddr_in address;
