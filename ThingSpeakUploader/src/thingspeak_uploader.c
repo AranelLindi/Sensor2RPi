@@ -41,13 +41,12 @@ void load_all_sensor_mappings() {
             if (mapping_count < MAX_MAPPINGS) {
                 snprintf(mappings[mapping_count].key, sizeof(mappings[mapping_count].key), "%s", key);
                 snprintf(mappings[mapping_count].field, sizeof(mappings[mapping_count].field), "%s", value2);
-                mapping_count++;
-
-                if (mapping_count >= MAX_MAPPINGS) {
-                    fprintf(stderr, "WARNUNG: MAX_MAPPINGS (%d) erreicht – weitere Einträge werden ignoriert.\n", MAX_MAPPINGS);
-                    break;
-                }                
+                mapping_count++;         
             }
+            else if (mapping_count >= MAX_MAPPINGS) {
+                fprintf(stderr, "WARNUNG: MAX_MAPPINGS (%d) erreicht – weitere Einträge werden ignoriert.\n", MAX_MAPPINGS);
+                break;
+            }       
         }
     }
     
