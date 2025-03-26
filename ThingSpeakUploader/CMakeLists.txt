@@ -26,6 +26,6 @@ install(FILES config.ini DESTINATION bin)
 add_custom_command(
 	TARGET thingspeak_uploader POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy
-	${CMAKE_SOURCE_DIR}/ThingSpeakUploader/src/config.ini
-	${CMAKE_BINARY_DIR}/ThingSpeakUploader/config.ini
+	${CMAKE_SOURCE_DIR}/src/config.ini
+	${CMAKE_BINARY_DIR}/../bin/config.ini
 )

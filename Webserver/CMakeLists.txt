@@ -20,6 +20,6 @@ install(FILES index.html DESTINATION bin)
 add_custom_command(
     TARGET webserver POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
-    ${CMAKE_SOURCE_DIR}/Webserver/src/index.html
-    ${CMAKE_BINARY_DIR}/Webserver/index.html
+    ${CMAKE_SOURCE_DIR}/src/index.html
+    ${CMAKE_BINARY_DIR}/../bin/index.html
 )
