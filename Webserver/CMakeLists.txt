@@ -1,25 +1,18 @@
 cmake_minimum_required(VERSION 3.10)
-
-# Projektname
 project(WebServer C)
 
-# Setze die C-Standardversion
+# C-Standard setzen
 set(CMAKE_C_STANDARD 11)
 
-# Erstelle die ausführbare Datei
+# Executable erstellen
 add_executable(webserver src/webserver.c)
 
-# Benötigte Bibliotheken hinzufügen (pthread und SQLite3)
+# Bibliotheken linken (pthread + SQLite3)
 target_link_libraries(webserver pthread sqlite3)
 
-# Installationsziel festlegen
-install(TARGETS webserver DESTINATION bin)
-install(FILES index.html DESTINATION bin)
-
-# Automatischer Kopiervorgang nach Build (optional)
-add_custom_command(
-    TARGET webserver POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-    ${CMAKE_SOURCE_DIR}/src/index.html
-    ${CMAKE_BINARY_DIR}/../bin/index.html
+# Nach dem Build: Executable und index.html in ../bin kopieren
+add_custom_command(TARGET webserver POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/../bin
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:webserver> ${CMAKE_CURRENT_BINARY_DIR}/../bin/
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/src/index.html ${CMAKE_CURRENT_BINARY_DIR}/../bin/
 )
