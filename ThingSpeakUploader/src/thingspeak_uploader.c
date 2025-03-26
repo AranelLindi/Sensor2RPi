@@ -140,7 +140,7 @@ void send_all_to_thingspeak(sqlite3 *db) {
             get_field_for_sensor(sensor_id, sensor_type, field, sizeof(field));
 
             // DEBUG:
-            printf("→ %s:%s → %s = %.2f\n", sensor_id, sensor_type, field, value);
+            //printf("→ %s:%s → %s = %.2f\n", sensor_id, sensor_type, field, value);
 
             // Füge Wert in die URL ein
             char temp[64];
@@ -158,7 +158,7 @@ void send_all_to_thingspeak(sqlite3 *db) {
             curl = curl_easy_init();
             if (curl) {
 
-                printf("Finale URL an ThingSpeak: %s\n", url);
+                //printf("Finale URL an ThingSpeak: %s\n", url);
 
                 printf("%lld ThingSpeak_Uploader update url=%s\n", (long long)time(NULL), url);
 
